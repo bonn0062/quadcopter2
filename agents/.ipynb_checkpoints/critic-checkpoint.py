@@ -1,0 +1,90 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "class Critic:\n",
+    "    \"\"\"Critic (Value) Model.\"\"\"\n",
+    "\n",
+    "    def __init__(self, state_size, action_size):\n",
+    "        \"\"\"Initialize parameters and build model.\n",
+    "\n",
+    "        Params\n",
+    "        ======\n",
+    "            state_size (int): Dimension of each state\n",
+    "            action_size (int): Dimension of each action\n",
+    "        \"\"\"\n",
+    "        self.state_size = state_size\n",
+    "        self.action_size = action_size\n",
+    "\n",
+    "        # Initialize any other variables here\n",
+    "\n",
+    "        self.build_model()\n",
+    "\n",
+    "    def build_model(self):\n",
+    "        \"\"\"Build a critic (value) network that maps (state, action) pairs -> Q-values.\"\"\"\n",
+    "        # Define input layers\n",
+    "        states = layers.Input(shape=(self.state_size,), name='states')\n",
+    "        actions = layers.Input(shape=(self.action_size,), name='actions')\n",
+    "\n",
+    "        # Add hidden layer(s) for state pathway\n",
+    "        net_states = layers.Dense(units=32, activation='relu')(states)\n",
+    "        net_states = layers.Dense(units=64, activation='relu')(net_states)\n",
+    "\n",
+    "        # Add hidden layer(s) for action pathway\n",
+    "        net_actions = layers.Dense(units=32, activation='relu')(actions)\n",
+    "        net_actions = layers.Dense(units=64, activation='relu')(net_actions)\n",
+    "\n",
+    "        # Try different layer sizes, activations, add batch normalization, regularizers, etc.\n",
+    "\n",
+    "        # Combine state and action pathways\n",
+    "        net = layers.Add()([net_states, net_actions])\n",
+    "        net = layers.Activation('relu')(net)\n",
+    "\n",
+    "        # Add more layers to the combined network if needed\n",
+    "\n",
+    "        # Add final output layer to prduce action values (Q values)\n",
+    "        Q_values = layers.Dense(units=1, name='q_values')(net)\n",
+    "\n",
+    "        # Create Keras model\n",
+    "        self.model = models.Model(inputs=[states, actions], outputs=Q_values)\n",
+    "\n",
+    "        # Define optimizer and compile model for training with built-in loss function\n",
+    "        optimizer = optimizers.Adam()\n",
+    "        self.model.compile(optimizer=optimizer, loss='mse')\n",
+    "\n",
+    "        # Compute action gradients (derivative of Q values w.r.t. to actions)\n",
+    "        action_gradients = K.gradients(Q_values, actions)\n",
+    "\n",
+    "        # Define an additional function to fetch action gradients (to be used by actor model)\n",
+    "        self.get_action_gradients = K.function(\n",
+    "            inputs=[*self.model.input, K.learning_phase()],\n",
+    "            outputs=action_gradients)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
